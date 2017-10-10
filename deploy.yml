@@ -1,0 +1,7 @@
+---
+
+- name: Deploy my awesome back-office
+  hosts: my-host
+  user: mdavydenkov
+  roles:
+    - deploy_frontend

@@ -1,0 +1,49 @@
+---
+  - name: Set deploy variables
+    set_fact:
+      release_timestamp: "{{lookup('pipe','date +%Y%m%d%H%M%S')}}"
+      releases_dir: "/home/mdavydenkov/test-admin/releases/"
+      keep_releases: 3
+
+  - name: Setup release_dir
+    set_fact:
+      release_dir: "{{ releases_dir }}/{{ release_timestamp }}/client"
+
+  - name: Create pathes for project
+    file: "path={{ item }} state=directory mode=755"
+    with_items:
+      - "/home/mdavydenkov/test-admin/repo/"
+      - "{{ release_dir }}"
+
+  - name: Clone project from git repo
+    git: repo="git@github.com:DavydenkovM/test-admin.git"
+         dest="/home/mdavydenkov/test-admin/repo"
+         version="master"
+         clone=yes
+         update=yes
+         force=yes
+         key_file=~/.ssh/id_dsa
+         accept_hostkey=true
+
+  - name: Copy project source files from repo
+    shell: "cp -r /home/mdavydenkov/test-admin/repo/* {{ release_dir }}"
+
+  - name: Install npm deps
+    shell: yarn install
+    args:
+      chdir: "{{ release_dir }}"
+
+  - name: Compile production build
+    shell: yarn build
+    args:
+      chdir: "{{ release_dir }}"
+
+  - name: Create a symlink to the latest release
+    file: src="{{ release_dir }}"
+          state=link
+          dest="/home/mdavydenkov/test-admin/current"
+          force=yes
+
+  - name: Clean up releases
+    shell: ls -1dt {{ releases_dir }}/* | tail -n +{{ keep_releases | int + 1  }} | xargs rm -rf
+    when: keep_releases > 0
