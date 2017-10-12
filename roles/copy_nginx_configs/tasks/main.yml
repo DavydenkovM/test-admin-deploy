@@ -32,7 +32,7 @@
     group: root
     mode: '0600'
   with_items:
-    - { host_name: trainer.netology.ru }
+    - { host_name: ih617409.vds.myihor.ru }
 
 - name: Create symlink for nginx template
   file:
