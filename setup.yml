@@ -1,0 +1,10 @@
+---
+
+- name: Setup deps for my awesome back-office
+  hosts: my-host
+  user: mdavydenkov
+  roles:
+    - role: jdauphant.nginx
+      become: true
+    - role: copy_nginx_configs
+      become: true

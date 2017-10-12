@@ -1,0 +1,63 @@
+- name: Create missing directories
+  file: state=directory path="{{item}}"
+  with_items:
+    - /etc/nginx/ssl
+    - /etc/nginx/sites-enabled
+    - /etc/nginx/sites-available
+    - /var/lib/nginx
+    - /var/lib/nginx/body
+    - /var/lib/nginx/factcgi
+
+- name: Copy ssl certs key
+  template:
+    src: ../templates/nginx/server.key
+    dest: /etc/nginx/ssl/server.key
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Copy ssl certs crt
+  template:
+    src: ../templates/nginx/server.crt
+    dest: /etc/nginx/ssl/server.crt
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copy nginx template
+  template:
+    src: ../templates/nginx/admin_pages.conf.j2
+    dest: /etc/nginx/sites-available/admin_pages.conf
+    owner: root
+    group: root
+    mode: '0600'
+  with_items:
+    - { host_name: trainer.netology.ru }
+
+- name: Create symlink for nginx template
+  file:
+    state: link
+    force: yes
+    path: /etc/nginx/sites-enabled/admin_pages.conf
+    src: /etc/nginx/sites-available/admin_pages.conf
+
+- name: Remove default nginx config
+  file: state=absent path=/etc/nginx/sites-enabled/default.conf
+  become: true
+
+# - name: Copy service systemd file
+#   copy:
+#     src: ../templates/nginx/nginx.service
+#     dest: /lib/systemd/system/nginx.service
+#     owner: root
+#     group: root
+#     mode: '0600'
+
+- name: Restart systemctl daemon
+  shell: systemctl daemon-reload
+
+- service:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+    - nginx
